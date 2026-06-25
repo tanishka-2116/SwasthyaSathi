@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwasthyaSathi | AI-Powered Healthcare Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            transition: background 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body.light-mode {
+            background: linear-gradient(135deg, #E8F4F8 0%, #D6EAF8 50%, #AED6F1 100%);
+        }
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+        }
+        body.dark-mode .card,
+        body.dark-mode .stat-card,
+        body.dark-mode .login-card,
+        body.dark-mode .sidebar {
+            background: rgba(30, 30, 50, 0.92);
+            backdrop-filter: blur(15px);
+            color: #e0e0e0;
+            border-color: rgba(100, 100, 150, 0.3);
+        }
+        body.dark-mode .card-title,
+        body.dark-mode .stat-number,
+        body.dark-mode .profile-label {
+            color: #7FB3D5;
+        }
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select {
+            background: rgba(20, 20, 40, 0.9);
+            color: #e0e0e0;
+            border-color: rgba(100, 100, 150, 0.3);
+        }
+        body.dark-mode .nav-item { color: #c0c0c0; }
+        body.dark-mode .nav-item.active { background: rgba(97, 165, 194, 0.3); }
+        body.dark-mode .user-name-sidebar { color: #7FB3D5; }
+
+        /* ===== CANVAS BG ===== */
+        #canvas-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ===== DARK MODE TOGGLE ===== */
+        .dark-mode-toggle {
+            position: fixed; top: 20px; right: 20px; z-index: 1000;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: none; border-radius: 50px;
+            padding: 10px 18px;
+            cursor: pointer; font-size: 14px; font-weight: 600;
+            transition: all 0.3s;
+        }
+        .dark-mode-toggle:hover { transform: scale(1.05); }
+        body.light-mode .dark-mode-toggle {
+            background: rgba(44,125,160,0.2);
+            color: #1a3a5c;
+        }
+        body.dark-mode .dark-mode-toggle {
+            background: rgba(97,165,194,0.3);
+            color: #7FB3D5;
+        }
+
+        /* ===== TOAST ===== */
+        .toast-notification {
+            position: fixed; top: 80px; right: 20px; z-index: 2000;
+            background: #2E7D32; color: white;
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 14px; font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ===== LOGIN ===== */
+        .login-container {
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; z-index: 1;
+        }
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 40px; padding: 40px;
+            width: 450px; text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+        }
+        .login-card h1 {
+            margin-bottom: 8px; font-size: 32px; font-weight: 700;
+        }
+        body.light-mode .login-card h1 { color: #1a3a5c; }
+        body.dark-mode .login-card h1 { color: #7FB3D5; }
+        .login-card .tagline {
+            color: #666; margin-bottom: 25px; font-size: 13px;
+        }
+        .login-card input {
+            width: 100%; padding: 14px 18px;
+            border: 2px solid rgba(44,125,160,0.2);
+            border-radius: 20px; font-size: 15px;
+            margin-bottom: 15px; background: white;
+        }
+        .login-card input:focus {
+            outline: none; border-color: #61A5C2;
+        }
+        .login-card button {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #1a3a5c, #2C7DA0);
+            color: white; border: none; border-radius: 20px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+        }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard-container {
+            display: flex; min-height: 100vh; position: relative; z-index: 1;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 260px;
+            backdrop-filter: blur(15px);
+            padding: 25px 0;
+            position: fixed; height: 100vh; overflow-y: auto;
+        }
+        body.light-mode .sidebar {
+            background: rgba(217,234,243,0.95);
+            border-right: 1px solid rgba(255,255,255,0.5);
+        }
+        body.dark-mode .sidebar {
+            background: rgba(30,30,50,0.95);
+            border-right: 1px solid rgba(100,100,150,0.3);
+        }
+        .sidebar-logo {
+            text-align: center; padding: 0 20px 20px 20px;
+            border-bottom: 1px solid rgba(44,62,80,0.1);
+            margin-bottom: 20px;
+        }
+        .sidebar-logo .logo-icon { font-size: 45px; margin-bottom: 8px; }
+        .sidebar-logo h2 { font-size: 22px; font-weight: 700; }
+        body.light-mode .sidebar-logo h2 { color: #1a3a5c; }
+        body.dark-mode .sidebar-logo h2 { color: #7FB3D5; }
+
+        .nav-menu { list-style: none; padding: 0; }
+        .nav-item {
+            padding: 10px 20px; margin: 5px 12px;
+            cursor: pointer; border-radius: 14px;
+            transition: all 0.3s;
+            display: flex; align-items: center; gap: 12px;
+            font-weight: 500; font-size: 14px;
+        }
+        .nav-item:hover {
+            background: rgba(44,125,160,0.15);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(44,125,160,0.25), rgba(97,165,194,0.25));
+            font-weight: 600;
+        }
+        .nav-icon { font-size: 20px; width: 28px; }
+
+        .user-section {
+            padding: 20px; border-top: 1px solid rgba(44,62,80,0.1);
+            text-align: center; margin-top: auto;
+        }
+        .user-name-sidebar {
+            font-weight: 700; margin-bottom: 6px; font-size: 14px;
+        }
+        body.light-mode .user-name-sidebar { color: #1a3a5c; }
+        body.dark-mode .user-name-sidebar { color: #7FB3D5; }
+        .user-email-sidebar {
+            font-size: 10px; color: #888; margin-bottom: 12px;
+            word-break: break-all;
+        }
+        .logout-btn {
+            width: 100%; padding: 10px;
+            background: rgba(232,165,152,0.9);
+            color: white; border: none; border-radius: 12px;
+            cursor: pointer; font-weight: 600; font-size: 13px;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: 260px; flex: 1;
+            padding: 20px 35px; min-height: 100vh;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            backdrop-filter: blur(10px);
+            border-radius: 24px; padding: 20px 25px;
+            margin-bottom: 20px; transition: all 0.3s;
+        }
+        body.light-mode .card {
+            background: rgba(255,255,255,0.92);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        body.dark-mode .card {
+            background: rgba(30,30,50,0.92);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .card:hover { transform: translateY(-3px); }
+        .card-title {
+            font-size: 22px; margin-bottom: 15px;
+            border-left: 4px solid #61A5C2;
+            padding-left: 15px; font-weight: 700;
+        }
+        body.light-mode .card-title { color: #1a3a5c; }
+        body.dark-mode .card-title { color: #7FB3D5; }
+
+        /* ===== HOME ===== */
+        .home-hero {
+            text-align: center; padding: 40px 30px; margin-bottom: 25px;
+            background: linear-gradient(135deg, rgba(26,58,92,0.9), rgba(44,125,160,0.85));
+            border-radius: 28px; color: white;
+        }
+        .home-hero-content {
+            display: flex; align-items: center; justify-content: center;
+            gap: 40px; flex-wrap: wrap;
+        }
+        .home-hero-text { flex: 1; min-width: 250px; }
+        .home-hero-image { flex: 1; min-width: 200px; }
+        .home-hero-image img {
+            max-width: 100%; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-height: 280px; object-fit: cover;
+        }
+        .home-quote { font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 10px; color: white; }
+        .home-quote-author { font-size: 16px; opacity: 0.9; font-style: italic; }
+        .home-description {
+            background: rgba(26,58,92,0.08);
+            border-radius: 20px; padding: 20px; margin-bottom: 25px;
+            text-align: center;
+        }
+        .home-description p {
+            font-size: 16px; line-height: 1.5;
+            color: #1a3a5c; max-width: 800px; margin: 0 auto;
+        }
+        body.dark-mode .home-description p { color: #c0c0c0; }
+        body.dark-mode .home-description { background: rgba(127,179,213,0.1); }
+        .home-features {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 12px; margin-bottom: 0;
+        }
+        .feature-badge {
+            background: rgba(26,58,92,0.1);
+            border-radius: 40px; padding: 8px 20px;
+            font-size: 13px; font-weight: 500; color: #1a3a5c;
+        }
+        body.dark-mode .feature-badge {
+            background: rgba(127,179,213,0.2);
+            color: #7FB3D5;
+        }
+
+        /* ===== FORMS ===== */
+        .form-super-compact {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .form-group { margin-bottom: 0; }
+        .form-group label {
+            display: block; margin-bottom: 3px;
+            font-weight: 600; font-size: 11px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px 10px;
+            border-radius: 10px; font-size: 12px;
+        }
+        body.light-mode .form-group input,
+        body.light-mode .form-group select {
+            border: 2px solid rgba(44,125,160,0.2);
+            background: white;
+        }
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select {
+            border: 2px solid rgba(100,100,150,0.3);
+            background: rgba(20,20,40,0.9);
+            color: #e0e0e0;
+        }
+        .full-width { grid-column: span 3; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1a3a5c, #2C7DA0);
+            color: white; border: none; padding: 10px 20px;
+            border-radius: 30px; cursor: pointer;
+            font-weight: 700; font-size: 13px; width: 100%;
+        }
+        .btn-secondary {
+            background: rgba(184,217,230,0.9);
+            border: none; padding: 6px 14px;
+            border-radius: 25px; cursor: pointer;
+            font-weight: 500; font-size: 11px;
+        }
+
+        /* ===== RISK STYLES ===== */
+        .risk-high {
+            background: linear-gradient(135deg, #FCE4E0, #FAD5CE);
+            border-left: 4px solid #E8A598;
+            padding: 10px; border-radius: 14px; margin: 10px 0;
+        }
+        .risk-medium {
+            background: linear-gradient(135deg, #FFF4E0, #FFEECC);
+            border-left: 4px solid #F0D08C;
+            padding: 10px; border-radius: 14px; margin: 10px 0;
+        }
+        .risk-low {
+            background: linear-gradient(135deg, #E0F4E8, #D0ECD8);
+            border-left: 4px solid #A8D8EA;
+            padding: 10px; border-radius: 14px; margin: 10px 0;
+        }
+
+        .scheme-card {
+            border-radius: 12px; padding: 8px 10px; margin: 6px 0;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .scheme-card:hover {
+            transform: translateX(5px);
+            background: rgba(97,165,194,0.15);
+        }
+        body.light-mode .scheme-card { background: linear-gradient(135deg, #E8F4F8, #D9EAF3); }
+        body.dark-mode .scheme-card { background: rgba(50,50,80,0.8); }
+
+        .recommendation-list {
+            list-style: none; padding: 0;
+        }
+        .recommendation-list li {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px;
+        }
+        .recommendation-list li:before {
+            content: "→"; color: #61A5C2;
+            font-weight: bold; font-size: 12px;
+        }
+
+        /* ===== SCORE CIRCLE ===== */
+        .score-circle {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: linear-gradient(135deg, #1a3a5c, #2C7DA0);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            margin: 10px auto; color: white;
+        }
+        .score-number { font-size: 32px; font-weight: 800; }
+
+        /* ===== GRAPH ===== */
+        .graph-container { height: 300px; margin-top: 12px; }
+        .graph-interpretation {
+            margin-top: 10px; padding: 10px; border-radius: 12px;
+            background: rgba(97,165,194,0.1);
+            border-left: 4px solid #61A5C2;
+        }
+        .interpretation-title {
+            font-weight: 700; margin-bottom: 5px; font-size: 12px;
+        }
+        body.light-mode .interpretation-title { color: #1a3a5c; }
+        body.dark-mode .interpretation-title { color: #7FB3D5; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 12px; margin-bottom: 15px;
+        }
+        .stat-card {
+            backdrop-filter: blur(8px);
+            border-radius: 18px; padding: 12px; text-align: center;
+        }
+        body.light-mode .stat-card { background: rgba(255,255,255,0.92); }
+        body.dark-mode .stat-card { background: rgba(30,30,50,0.92); }
+        .stat-number { font-size: 28px; font-weight: 800; }
+        body.light-mode .stat-number { color: #1a3a5c; }
+        body.dark-mode .stat-number { color: #7FB3D5; }
+        .stat-label { font-size: 11px; margin-top: 4px; }
+
+        .hidden { display: none; }
+
+        /* ===== PROFILE ===== */
+        .profile-row {
+            display: flex; padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 12px;
+        }
+        .profile-label {
+            width: 120px; font-weight: 700;
+        }
+        body.light-mode .profile-label { color: #1a3a5c; }
+        body.dark-mode .profile-label { color: #7FB3D5; }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #DC143C, #C71585);
+        }
+
+        .flex-buttons {
+            display: flex; gap: 8px; margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-bmi {
+            display: inline-block; width: 14px; height: 3px;
+            background: #2C7DA0; margin-right: 4px;
+            vertical-align: middle;
+        }
+        .legend-risk {
+            display: inline-block; width: 14px; height: 3px;
+            background: #DC143C; margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        .delete-btn {
+            background: #dc3545; color: white; border: none;
+            padding: 2px 8px; border-radius: 20px;
+            cursor: pointer; font-size: 10px; margin-left: 8px;
+        }
+        .delete-btn:hover { background: #c82333; }
+
+        .lab-upload-card {
+            background: linear-gradient(135deg, rgba(97,165,194,0.08), rgba(44,125,160,0.08));
+            border: 1px dashed #61A5C2;
+        }
+        .lab-normal { color: #28a745; font-weight: bold; }
+        .lab-borderline { color: #f0ad4e; font-weight: bold; }
+        .lab-high { color: #dc3545; font-weight: bold; }
+
+        /* ===== ABOUT ===== */
+        .about-full { width: 100%; padding: 0; }
+        .about-header { text-align: center; margin-bottom: 20px; }
+        .about-header h2 { font-size: 24px; color: #1a3a5c; }
+        .about-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .about-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 18px; padding: 15px;
+            transition: all 0.3s;
+            border: 1px solid rgba(44,125,160,0.2);
+        }
+        .about-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .about-icon { font-size: 32px; margin-bottom: 10px; }
+        .about-card h3 {
+            font-size: 16px; margin-bottom: 8px;
+            color: #1a3a5c;
+        }
+        .about-card p {
+            font-size: 12px; line-height: 1.4;
+            color: #444;
+        }
+        body.dark-mode .about-card {
+            background: rgba(30,30,50,0.95);
+        }
+        body.dark-mode .about-card p { color: #c0c0c0; }
+
+        .feature-icons {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; margin-top: 15px;
+        }
+        .feature-icon-item {
+            text-align: center; padding: 10px;
+            background: rgba(97,165,194,0.1);
+            border-radius: 14px; transition: all 0.3s;
+        }
+        .feature-icon-item:hover {
+            transform: translateY(-2px);
+            background: rgba(97,165,194,0.2);
+        }
+        .feature-icon-item .icon { font-size: 24px; margin-bottom: 5px; }
+        .feature-icon-item span { font-size: 11px; font-weight: 500; }
+
+        /* ===== PRINT ===== */
+        @media print {
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .sidebar, .dark-mode-toggle, .logout-btn, .nav-menu, .user-section,
+            .flex-buttons, .btn-primary, .btn-secondary, .lab-upload-card, .btn-pdf {
+                display: none !important;
+            }
+            .main-content { margin-left: 0 !important; padding: 0 !important; }
+            .card {
+                box-shadow: none !important;
+                background: white !important;
+                color: black !important;
+                padding: 5px !important;
+                margin: 0 !important;
+            }
+            body * { font-size: 10pt !important; line-height: 1.2 !important; }
+            h1 { font-size: 18pt !important; }
+            h2 { font-size: 14pt !important; }
+            h3, .card-title { font-size: 12pt !important; }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .sidebar-logo h2, .sidebar-logo p, .nav-item span, .user-section { display: none; }
+            .main-content { margin-left: 70px; padding: 15px; }
+            .home-quote { font-size: 22px; }
+            .form-super-compact { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .about-grid { grid-template-columns: 1fr; }
+            .feature-icons { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <canvas id="canvas-bg"></canvas>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="logo-icon" style="font-size: 55px;">🏥</div>
+            <h1>SwasthyaSathi</h1>
+            <p class="tagline">AI-Powered Preventive Healthcare Portal</p>
+            <input type="text" id="userNameInput" placeholder="Full Name">
+            <input type="email" id="userEmailInput" placeholder="Email Address">
+            <button onclick="login()">Start Health Journey</button>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboardScreen" class="hidden">
+        <div class="dashboard-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div>
+                    <div class="sidebar-logo">
+                        <div class="logo-icon">🏥</div>
+                        <h2>SwasthyaSathi</h2>
+                        <p>AI-Powered</p>
+                    </div>
+                    <ul class="nav-menu">
+                        <li class="nav-item active" data-page="home"><span class="nav-icon">🏠</span><span>Home</span></li>
+                        <li class="nav-item" data-page="about"><span class="nav-icon">ℹ️</span><span>About Us</span></li>
+                        <li class="nav-item" data-page="profile"><span class="nav-icon">👤</span><span>Profile</span></li>
+                        <li class="nav-item" data-page="healthcheck"><span class="nav-icon">📋</span><span>Health Check</span></li>
+                        <li class="nav-item" data-page="wellness"><span class="nav-icon">⭐</span><span>Wellness Score</span></li>
+                        <li class="nav-item" data-page="graph"><span class="nav-icon">📊</span><span>Health Graph</span></li>
+                    </ul>
+                </div>
+                <div class="user-section">
+                    <div class="user-name-sidebar" id="sidebarUserName"></div>
+                    <div class="user-email-sidebar" id="sidebarUserEmail"></div>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <!-- Main Content -->
+            <div class="main-content" id="mainContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL VARIABLES =====
+        let currentUserId = null;
+        let currentUserName = null;
+        let currentUserEmail = null;
+        let currentRegisteredDate = null;
+        let currentAge = 0;
+        let healthHistory = [];
+        let wellnessScore = null;
+        let riskLevel = null;
+        let latestBmi = null;
+        let chartInstance = null;
+        let currentPage = 'home';
+        let currentPDFContent = null;
+        let extractedLabValues = { bloodSugar: 0, hemoglobin: 0 };
+
+        // ===== TOAST NOTIFICATION =====
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.style.background = type === 'success' ? '#2E7D32' : '#DC3545';
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ===== CANVAS ANIMATION =====
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        const particles = [];
+        const pastelColors = [
+            'rgba(44,125,160,0.15)', 'rgba(97,165,194,0.12)', 'rgba(168,216,234,0.1)',
+            'rgba(76,175,80,0.1)', 'rgba(255,193,7,0.08)', 'rgba(156,204,101,0.12)'
+        ];
+        for (let i = 0; i < 50; i++) {
+            particles.push({
+                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                radius: Math.random() * 20 + 8,
+                speedX: (Math.random() - 0.5) * 0.2, speedY: (Math.random() - 0.5) * 0.2,
+                color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
+                glow: Math.random() * 20 + 10
+            });
+        }
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                radius: Math.random() * 5 + 2,
+                speedX: (Math.random() - 0.5) * 0.4, speedY: (Math.random() - 0.5) * 0.4,
+                color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
+                glow: Math.random() * 8 + 4
+            });
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    if (particles[i].radius > 12 && particles[j].radius > 12) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < 180) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(44,125,160,${0.04 * (1 - distance / 180)})`;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            particles.forEach(p => {
+                ctx.shadowBlur = p.glow;
+                ctx.shadowColor = 'rgba(44,125,160,0.3)';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if (p.x < -50 || p.x > canvas.width + 50) p.speedX *= -1;
+                if (p.y < -50 || p.y > canvas.height + 50) p.speedY *= -1;
+            });
+            ctx.shadowBlur = 0;
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ===== DARK MODE =====
+        function toggleDarkMode() {
+            const body = document.body;
+            const btn = document.querySelector('.dark-mode-toggle');
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                btn.innerHTML = 'Light Mode';
+                localStorage.setItem('swasthya_theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                btn.innerHTML = 'Dark Mode';
+                localStorage.setItem('swasthya_theme', 'light');
+            }
+        }
+        const savedTheme = localStorage.getItem('swasthya_theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.remove('light-mode');
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').innerHTML = 'Light Mode';
+        }
+
+        // ===== DATE HELPERS =====
+        function formatDate(dateString) {
+            if (!dateString || dateString === '0000-00-00') {
+                return new Date().toLocaleDateString();
+            }
+            return dateString;
+        }
+
+        // ===== API CALLS =====
+        async function loadAssessmentsFromDB() {
+            try {
+                const response = await fetch(`api.php?action=get-assessments&userId=${currentUserId}`);
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    healthHistory = data.map(item => ({
+                        id: item.id,
+                        date: formatDate(item.date),
+                        bmi: parseFloat(item.bmi),
+                        riskScore: item.risk_score,
+                        riskLevel: item.risk_level,
+                        wellnessScore: item.wellness_score,
+                        age: item.age
+                    }));
+                    if (healthHistory.length > 0) {
+                        const latest = healthHistory[0];
+                        wellnessScore = latest.wellnessScore;
+                        riskLevel = latest.riskLevel;
+                        latestBmi = latest.bmi;
+                        currentAge = latest.age;
+                    }
+                }
+            } catch (err) {
+                console.log("Error loading assessments:", err);
+            }
+        }
+
+        async function saveAssessmentToDB(assessment) {
+            try {
+                await fetch('api.php?action=save-assessment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        age: assessment.age,
+                        bmi: assessment.bmi,
+                        riskScore: assessment.riskScore,
+                        riskLevel: assessment.riskLevel,
+                        wellnessScore: assessment.wellnessScore
+                    })
+                });
+            } catch (err) {
+                console.log("Error saving assessment:", err);
+            }
+        }
+
+        async function deleteAssessmentFromDB(assessmentId) {
+            try {
+                await fetch('api.php?action=delete-assessment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assessmentId: assessmentId, userId: currentUserId })
+                });
+            } catch (err) {
+                console.log("Error deleting assessment:", err);
+            }
+        }
+
+        async function deleteAssessment(index) {
+            const assessment = healthHistory[index];
+            if (!assessment) return;
+            if (confirm('Delete this assessment?')) {
+                await deleteAssessmentFromDB(assessment.id);
+                await loadAssessmentsFromDB();
+                if (healthHistory.length > 0) {
+                    const latest = healthHistory[0];
+                    wellnessScore = latest.wellnessScore;
+                    riskLevel = latest.riskLevel;
+                    latestBmi = latest.bmi;
+                } else {
+                    wellnessScore = null; riskLevel = null; latestBmi = null;
+                }
+                if (currentPage === 'graph') renderGraph();
+                else if (currentPage === 'wellness') renderWellnessScore();
+                else if (currentPage === 'home') renderHome();
+                else if (currentPage === 'profile') renderProfile();
+                showToast('Assessment deleted');
+            }
+        }
+
+        // ===== OCR LAB REPORT =====
+        async function uploadLabReport() {
+            const fileInput = document.getElementById('labReportFile');
+            const file = fileInput?.files[0];
+            if (!file) {
+                showToast("Please select a file first", 'error');
+                return;
+            }
+            showToast("Processing file... Extracting values using OCR", 'success');
+            document.getElementById('extractedData').innerHTML = `<p style="color: #2C7DA0;">Processing your report...</p>`;
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('apikey', 'K81295316588957');
+            formData.append('language', 'eng');
+            formData.append('isOverlayRequired', 'false');
+            formData.append('filetype', file.type === 'application/pdf' ? 'PDF' : 'PNG');
+            try {
+                const response = await fetch('https://api.ocr.space/parse/image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.OCRExitCode === 1 && result.ParsedResults && result.ParsedResults[0]) {
+                    const extractedText = result.ParsedResults[0].ParsedText;
+                    extractLabValuesFromText(extractedText);
+                } else {
+                    let errorMsg = result.ErrorMessage?.[0] || "Could not read values";
+                    showToast(errorMsg, 'error');
+                    showManualEntry();
+                }
+            } catch (err) {
+                showToast("OCR service error. Please enter manually.", 'error');
+                showManualEntry();
+            }
+        }
+
+        function extractLabValuesFromText(text) {
+            let bloodSugar = 0, hemoglobin = 0;
+            const sugarPatterns = [
+                /(?:blood sugar|blood glucose|glucose|sugar)[:\s]*(\d{2,3})/i,
+                /(?:fbg|ppbs|rbs)[:\s]*(\d{2,3})/i,
+                /glucose[:\s]*(\d{2,3})/i,
+                /sugar[:\s]*(\d{2,3})/i
+            ];
+            for (let pattern of sugarPatterns) {
+                const match = text.match(pattern);
+                if (match && match[1]) {
+                    bloodSugar = parseInt(match[1]);
+                    if (bloodSugar >= 50 && bloodSugar <= 300) break;
+                    else bloodSugar = 0;
+                }
+            }
+            if (bloodSugar === 0) {
+                const possibleSugar = text.match(/\b(7[0-9]|8[0-9]|9[0-9]|1[0-4][0-9]|150)\b/g);
+                if (possibleSugar && possibleSugar.length > 0) {
+                    for (let val of possibleSugar) {
+                        const num = parseInt(val);
+                        if (num >= 70 && num <= 150) {
+                            bloodSugar = num;
+                            break;
+                        }
+                    }
+                }
+            }
+            const hbPatterns = [
+                /(?:hemoglobin|haemoglobin|hb|hgb)[:\s]*(\d{1,2}\.?\d?)/i,
+                /(?:hb|hgb)[:\s]*(\d{1,2}\.?\d?)/i,
+                /(\d{1,2}\.?\d?)\s*g\/dL/i
+            ];
+            for (let pattern of hbPatterns) {
+                const match = text.match(pattern);
+                if (match && match[1]) {
+                    hemoglobin = parseFloat(match[1]);
+                    if (hemoglobin >= 8 && hemoglobin <= 18) break;
+                    else hemoglobin = 0;
+                }
+            }
+            if (hemoglobin === 0) {
+                const possibleHb = text.match(/\b(1[0-6](?:\.\d)?)\b/g);
+                if (possibleHb && possibleHb.length > 0) {
+                    for (let val of possibleHb) {
+                        const num = parseFloat(val);
+                        if (num >= 10 && num <= 16) {
+                            hemoglobin = num;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (bloodSugar > 0 || hemoglobin > 0) {
+                extractedLabValues = { bloodSugar, hemoglobin };
+                let bsText = bloodSugar > 125 ? 'High (Diabetes risk)' : bloodSugar > 100 ? 'Borderline (Pre-diabetes)' : 'Normal';
+                let hbText = hemoglobin < 12 && hemoglobin > 0 ? 'Low (Anemia risk)' : hemoglobin >= 12 ? 'Normal' : '';
+                let interpretation = '';
+                if (bloodSugar > 100) interpretation += 'Blood sugar is elevated. ';
+                if (hemoglobin < 12 && hemoglobin > 0) interpretation += 'Hemoglobin is low. ';
+                if (interpretation === '' && (bloodSugar > 0 || hemoglobin > 0)) interpretation = 'All lab values are within normal range.';
+                document.getElementById('extractedData').innerHTML = `
+                    <div style="background:rgba(46,125,50,0.1);padding:12px;border-radius:12px;margin-top:10px;">
+                        <p style="font-weight:bold;color:#1a3a5c;margin-bottom:10px;">Extracted Values from Your Blood Report:</p>
+                        <div class="form-super-compact">
+                            <div><strong>Blood Sugar:</strong> ${bloodSugar > 0 ? bloodSugar + ' mg/dL' : 'Not detected'} ${bloodSugar > 0 ? `<br><span class="lab-${bloodSugar > 125 ? 'high' : (bloodSugar > 100 ? 'borderline' : 'normal')}">${bsText}</span>` : ''}</div>
+                            <div><strong>Hemoglobin:</strong> ${hemoglobin > 0 ? hemoglobin + ' g/dL' : 'Not detected'} ${hemoglobin > 0 ? `<br><span class="lab-${hemoglobin < 12 ? 'high' : 'normal'}">${hbText}</span>` : ''}</div>
+                        </div>
+                        <p style="margin-top:8px;font-size:11px;background:white;padding:6px;border-radius:8px;">Interpretation: ${interpretation}</p>
+                    </div>
+                `;
+                showToast("Lab values extracted successfully", 'success');
+            } else {
+                showToast("Could not find values. Please enter manually.", 'error');
+                showManualEntry();
+            }
+        }
+
+        function showManualEntry() {
+            document.getElementById('extractedData').innerHTML = `
+                <div style="background:rgba(97,165,194,0.15);padding:12px;border-radius:12px;margin-top:10px;">
+                    <p style="font-weight:bold;margin-bottom:10px;font-size:13px;">Enter Values from Your Blood Report:</p>
+                    <div class="form-super-compact" style="margin-top:8px;">
+                        <div class="form-group"><label>Blood Sugar (mg/dL)</label><input type="text" id="bloodSugarManual" placeholder="e.g., 95"></div>
+                        <div class="form-group"><label>Hemoglobin (g/dL)</label><input type="text" id="hemoglobinManual" placeholder="e.g., 14.2"></div>
+                    </div>
+                    <button class="btn-primary" onclick="applyManualValues()" style="margin-top:10px;padding:6px 12px;font-size:12px;width:auto;">Apply Values</button>
+                </div>
+            `;
+        }
+
+        function applyManualValues() {
+            const bloodSugar = document.getElementById('bloodSugarManual')?.value;
+            const hemoglobin = document.getElementById('hemoglobinManual')?.value;
+            extractedLabValues = {
+                bloodSugar: bloodSugar ? parseFloat(bloodSugar) : 0,
+                hemoglobin: hemoglobin ? parseFloat(hemoglobin) : 0
+            };
+            let message = "Lab values applied: ";
+            if (extractedLabValues.bloodSugar > 0) message += `Blood Sugar ${extractedLabValues.bloodSugar} mg/dL, `;
+            if (extractedLabValues.hemoglobin > 0) message += `Hemoglobin ${extractedLabValues.hemoglobin} g/dL`;
+            showToast(message, 'success');
+            document.getElementById('extractedData').innerHTML = `<p style="color:#2E7D32;font-size:12px;">Lab values applied. They will be used in risk calculation.</p>`;
+        }
+
+        // ===== LOGIN =====
+        async function login() {
+            const name = document.getElementById('userNameInput').value.trim();
+            const email = document.getElementById('userEmailInput').value.trim();
+            if (!name) { showToast("Please enter your name", 'error'); return; }
+            if (!email || !email.includes('@')) { showToast("Please enter a valid email", 'error'); return; }
+            try {
+                const response = await fetch('api.php?action=save-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, email: email })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    currentUserId = data.userId;
+                    currentUserName = data.name;
+                    currentUserEmail = email;
+                    currentRegisteredDate = data.registeredDate;
+                    document.getElementById('sidebarUserName').innerText = data.name;
+                    document.getElementById('sidebarUserEmail').innerText = email;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('dashboardScreen').classList.remove('hidden');
+                    await loadAssessmentsFromDB();
+                    navigateTo('home');
+                    if (data.isNew) {
+                        showToast(`Welcome ${data.name}! Your health journey starts today.`);
+                    } else {
+                        showToast(`Welcome back ${data.name}!`);
+                    }
+                } else {
+                    showToast("Login failed", 'error');
+                }
+            } catch (err) {
+                showToast("Connection error", 'error');
+            }
+        }
+
+        // ===== NAVIGATION =====
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const page = this.getAttribute('data-page');
+                    navigateTo(page);
+                });
+            });
+        }
+
+        function navigateTo(page) {
+            currentPage = page;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-page') === page) item.classList.add('active');
+            });
+            if (page === 'home') renderHome();
+            else if (page === 'about') renderAbout();
+            else if (page === 'profile') renderProfile();
+            else if (page === 'healthcheck') renderHealthCheck();
+            else if (page === 'wellness') renderWellnessScore();
+            else if (page === 'graph') renderGraph();
+        }
+
+        // ===== RENDER: HOME =====
+        function renderHome() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="home-hero">
+                    <div class="home-hero-content">
+                        <div class="home-hero-text">
+                            <div class="home-quote">"Prevention is better than cure"</div>
+                            <div class="home-quote-author">— Desiderius Erasmus</div>
+                        </div>
+                        <div class="home-hero-image">
+                            <img src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500&h=350&fit=crop" alt="Doctor with stethoscope healthcare concept">
+                        </div>
+                    </div>
+                </div>
+                <div class="home-description">
+                    <p>SwasthyaSathi is an AI-powered preventive healthcare platform designed to help you understand your health risks, receive personalized recommendations, and access relevant government health schemes.</p>
+                </div>
+                <div class="home-features">
+                    <span class="feature-badge">AI Risk Assessment</span>
+                    <span class="feature-badge">Personalized Recommendations</span>
+                    <span class="feature-badge">Government Schemes</span>
+                    <span class="feature-badge">Health Tracking</span>
+                    <span class="feature-badge">PDF Reports</span>
+                    <span class="feature-badge">Upload Lab Reports</span>
+                </div>
+            `;
+        }
+
+        // ===== RENDER: ABOUT =====
+        function renderAbout() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="card about-full">
+                    <div class="about-header"><h2>About SwasthyaSathi</h2></div>
+                    <div class="about-grid">
+                        <div class="about-card"><div class="about-icon">🤖</div><h3>AI-Powered Risk Assessment</h3><p>Advanced algorithm analyzing age, BMI, lifestyle factors and medical history.</p></div>
+                        <div class="about-card"><div class="about-icon">📋</div><h3>Personalized Recommendations</h3><p>Tailored health recommendations including diet, exercise, and lifestyle modifications.</p></div>
+                        <div class="about-card"><div class="about-icon">🏛️</div><h3>Government Scheme Discovery</h3><p>Access relevant health schemes like Ayushman Bharat, ABDM, and more.</p></div>
+                        <div class="about-card"><div class="about-icon">📊</div><h3>Health Tracking & Analytics</h3><p>Track BMI, wellness score, and risk levels with interactive graphs.</p></div>
+                    </div>
+                    <div class="feature-icons">
+                        <div class="feature-icon-item"><div class="icon">📝</div><span>Health Assessment</span></div>
+                        <div class="feature-icon-item"><div class="icon">⭐</div><span>Wellness Score</span></div>
+                        <div class="feature-icon-item"><div class="icon">📈</div><span>Trend Analysis</span></div>
+                        <div class="feature-icon-item"><div class="icon">📄</div><span>PDF Reports</span></div>
+                        <div class="feature-icon-item"><div class="icon">📎</div><span>Upload Lab Reports</span></div>
+                        <div class="feature-icon-item"><div class="icon">🗑️</div><span>Delete History</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ===== RENDER: PROFILE (Modern) =====
+        function renderProfile() {
+            // Health Age
+            const healthAge = wellnessScore !== null && currentAge ? Math.round(currentAge - (wellnessScore - 50) / 10) : '--';
+            const ageDifference = wellnessScore !== null && currentAge ? healthAge - currentAge : 0;
+            const latestAssessment = healthHistory.length > 0 ? healthHistory[0] : null;
+            const totalAssessments = healthHistory.length;
+
+            // Health Summary
+            let healthSummary = '';
+            if (wellnessScore !== null && wellnessScore >= 80) {
+                healthSummary = "You're maintaining excellent health! Your wellness score is outstanding. Keep up your healthy lifestyle and regular checkups.";
+            } else if (wellnessScore !== null && wellnessScore >= 60) {
+                healthSummary = "You're on the right track! Your wellness score is good. Focus on improving your diet and exercise routine for better results.";
+            } else if (wellnessScore !== null && wellnessScore >= 40) {
+                healthSummary = "Your health needs attention. Consider consulting a doctor and making lifestyle changes to improve your wellness score.";
+            } else {
+                healthSummary = "We recommend taking a health assessment to understand your current health status and get personalized recommendations.";
+            }
+
+            // Recommendations
+            let recommendations = [];
+            if (latestAssessment) {
+                if (latestAssessment.bmi > 25) recommendations.push("🏃 Consider increasing physical activity to manage BMI");
+                if (latestAssessment.bmi < 18.5) recommendations.push("🍎 Focus on a balanced diet with adequate protein intake");
+                if (latestAssessment.riskLevel === 'High') recommendations.push("🩺 Please consult a doctor for a complete health checkup");
+                if (latestAssessment.riskLevel === 'Medium') recommendations.push("📋 Follow the personalized recommendations from your last assessment");
+                if (latestAssessment.wellnessScore < 70) recommendations.push("💪 Try to maintain a consistent exercise routine");
+                if (recommendations.length === 0) recommendations.push("✅ Keep maintaining your healthy lifestyle!");
+            } else {
+                recommendations.push("📝 Take your first health assessment to get started");
+            }
+
+            // Health Indicators
+            const indicators = [
+                { label: "Heart Health", value: wellnessScore !== null && wellnessScore > 70 ? "Good" : "Needs Attention", icon: "❤️", status: wellnessScore !== null && wellnessScore > 70 ? "good" : "warning" },
+                { label: "Stress Level", value: latestAssessment ? (latestAssessment.riskLevel === 'Low' ? "Low" : "Moderate") : "--", icon: "🧠", status: latestAssessment ? (latestAssessment.riskLevel === 'Low' ? "good" : "warning") : "neutral" },
+                { label: "Fitness", value: latestAssessment ? (latestAssessment.bmi < 25 ? "Active" : "Needs Work") : "--", icon: "💪", status: latestAssessment ? (latestAssessment.bmi < 25 ? "good" : "warning") : "neutral" }
+            ];
+
+            // Badges
+            const badges = [];
+            if (totalAssessments >= 1) badges.push({ icon: "📝", label: "First Assessment Done" });
+            if (totalAssessments >= 5) badges.push({ icon: "🔥", label: "Health Streak" });
+            if (wellnessScore !== null && wellnessScore >= 80) badges.push({ icon: "⭐", label: "Wellness Warrior" });
+            if (riskLevel === 'Low') badges.push({ icon: "🛡️", label: "Low Risk Champion" });
+
+            // Activity Feed
+            let activityHtml = '';
+            if (healthHistory.length > 0) {
+                for (let i = 0; i < Math.min(healthHistory.length, 5); i++) {
+                    const h = healthHistory[i];
+                    const date = new Date(h.date);
+                    const formattedDate = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const riskEmoji = h.riskLevel === 'Low' ? '✅' : h.riskLevel === 'Medium' ? '⚠️' : '🔴';
+                    activityHtml += `
+                        <div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+                            <div style="width:36px; height:36px; background:linear-gradient(135deg, #E8F4F8, #D6EAF8); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px;">📊</div>
+                            <div style="flex:1;">
+                                <div style="font-size:12px; font-weight:600; color:#1a3a5c;">Health Assessment</div>
+                                <div style="font-size:10px; color:#888;">${formattedDate} • BMI: ${h.bmi} • ${riskEmoji} ${h.riskLevel}</div>
+                            </div>
+                            <div style="font-size:10px; color:#61A5C2; font-weight:600;">${h.wellnessScore}/100</div>
+                        </div>
+                    `;
+                }
+            } else {
+                activityHtml = `<div style="text-align:center; padding:20px; color:#888; font-size:12px;">No assessments yet. Take your first health assessment to get started!</div>`;
+            }
+
+            // Health Age
+            let healthAgeHtml = '';
+            if (wellnessScore !== null && currentAge && healthAge !== '--') {
+                const isYounger = ageDifference < 0;
+                healthAgeHtml = `
+                    <div style="background:linear-gradient(135deg, ${isYounger ? '#E0F4E8' : '#FFF4E0'}, ${isYounger ? '#D0ECD8' : '#FFEECC'}); padding:8px 12px; border-radius:12px; text-align:center; margin-bottom:12px;">
+                        <span style="font-size:12px; font-weight:600; color:${isYounger ? '#28a745' : '#f0ad4e'}">
+                            ${isYounger ? '💚 You are ' + Math.abs(ageDifference) + ' years younger than your actual age!' : '⚠️ Your health age is ' + Math.abs(ageDifference) + ' years older than your actual age'}
+                        </span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('mainContent').innerHTML = `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+
+                    <!-- LEFT COLUMN -->
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+
+                        <!-- Profile Card -->
+                        <div class="card" style="padding:25px; background: rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:20px; box-shadow:0 8px 32px rgba(44,125,160,0.08);">
+                            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+                                <div style="width:70px; height:70px; background:linear-gradient(135deg, #2C7DA0, #1a3a5c); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; color:white; font-weight:700; flex-shrink:0;">
+                                    ${currentUserName ? currentUserName.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <div style="flex:1; min-width:0;">
+                                    <h2 style="font-size:20px; color:#1a3a5c; margin:0; word-break:break-word;">${currentUserName}</h2>
+                                    <p style="font-size:12px; color:#888; margin:2px 0; word-break:break-all;">${currentUserEmail}</p>
+                                    <p style="font-size:11px; color:#61A5C2; margin:0;">📅 Member Since: ${currentRegisteredDate || new Date().toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            ${healthAgeHtml}
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;">
+                                <div style="background:linear-gradient(135deg, #E8F4F8, #D6EAF8); padding:12px; border-radius:14px; text-align:center;">
+                                    <div style="font-size:10px; color:#888;">Wellness Score</div>
+                                    <div style="font-size:24px; font-weight:800; color:#1a3a5c;">${wellnessScore !== null ? wellnessScore : '--'}</div>
+                                </div>
+                                <div style="background:linear-gradient(135deg, #E8F4F8, #D6EAF8); padding:12px; border-radius:14px; text-align:center;">
+                                    <div style="font-size:10px; color:#888;">Total Assessments</div>
+                                    <div style="font-size:24px; font-weight:800; color:#1a3a5c;">${healthHistory.length}</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:12px;">
+                                <button onclick="navigateTo('healthcheck')" style="flex:1; padding:8px; background:linear-gradient(135deg, #1a3a5c, #2C7DA0); color:white; border:none; border-radius:12px; cursor:pointer; font-size:12px; font-weight:600;">📝 New Assessment</button>
+                                <button onclick="navigateTo('graph')" style="flex:1; padding:8px; background:#E8F4F8; color:#1a3a5c; border:none; border-radius:12px; cursor:pointer; font-size:12px; font-weight:600;">📊 View Trends</button>
+                            </div>
+                        </div>
+
+                        <!-- Health Summary -->
+                        <div class="card" style="padding:20px; background: rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:20px; box-shadow:0 8px 32px rgba(44,125,160,0.08);">
+                            <h3 style="font-size:16px; color:#1a3a5c; margin-bottom:10px;">🧠 AI Health Summary</h3>
+                            <p style="font-size:13px; line-height:1.5; color:#555; margin-bottom:10px;">${healthSummary}</p>
+                            <div style="font-size:12px; font-weight:600; color:#1a3a5c; margin-bottom:4px;">⚡ Recommendations:</div>
+                            <ul style="list-style:none; padding:0; margin:0;">
+                                ${recommendations.slice(0, 3).map(rec => `<li style="font-size:11px; color:#555; padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.03);">${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN -->
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+
+                        <!-- Health Indicators -->
+                        <div class="card" style="padding:20px; background: rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:20px; box-shadow:0 8px 32px rgba(44,125,160,0.08);">
+                            <h3 style="font-size:16px; color:#1a3a5c; margin-bottom:10px;">📊 Health Indicators</h3>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                                ${indicators.map(ind => `
+                                    <div style="background:${ind.status === 'good' ? '#E0F4E8' : ind.status === 'warning' ? '#FFF4E0' : '#f5f5f5'}; padding:10px; border-radius:12px; text-align:center;">
+                                        <div style="font-size:20px;">${ind.icon}</div>
+                                        <div style="font-size:9px; color:#888; margin-top:2px;">${ind.label}</div>
+                                        <div style="font-size:11px; font-weight:600; color:${ind.status === 'good' ? '#28a745' : ind.status === 'warning' ? '#f0ad4e' : '#888'};">${ind.value}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Health Badges -->
+                        ${badges.length > 0 ? `
+                        <div class="card" style="padding:20px; background: rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:20px; box-shadow:0 8px 32px rgba(44,125,160,0.08);">
+                            <h3 style="font-size:16px; color:#1a3a5c; margin-bottom:10px;">🏆 Achievements</h3>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                                ${badges.map(b => `
+                                    <span style="background:linear-gradient(135deg, #E8F4F8, #D6EAF8); padding:4px 12px; border-radius:20px; font-size:11px; font-weight:500; color:#1a3a5c; display:flex; align-items:center; gap:4px;">
+                                        ${b.icon} ${b.label}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Recent Activity -->
+                        <div class="card" style="padding:20px; background: rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:20px; box-shadow:0 8px 32px rgba(44,125,160,0.08); flex:1;">
+                            <h3 style="font-size:16px; color:#1a3a5c; margin-bottom:10px;">📋 Recent Activity</h3>
+                            ${activityHtml}
+                        </div>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        // ===== RENDER: HEALTH CHECK =====
+        function renderHealthCheck() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="card lab-upload-card">
+                    <h3 class="card-title">Upload Blood Report</h3>
+                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Upload your blood test report (PDF or Image) to automatically extract Blood Sugar and Hemoglobin values</p>
+                    <input type="file" id="labReportFile" accept=".pdf,.jpg,.png,.jpeg" style="margin-bottom: 10px;">
+                    <button class="btn-secondary" onclick="uploadLabReport()" style="width: auto; padding: 6px 15px;">Upload & Extract Values</button>
+                    <div id="extractedData" style="margin-top: 10px; font-size: 12px;"></div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Complete Health Risk Assessment</h3>
+                    <p style="margin-bottom: 10px; font-size: 11px; color: #666;">Fill the details below for analysis</p>
+                    <div class="form-super-compact">
+                        <div class="form-group"><label>Age</label><input type="text" id="age" placeholder="e.g., 35"></div>
+                        <div class="form-group"><label>Height (cm)</label><input type="text" id="height" placeholder="e.g., 170"></div>
+                        <div class="form-group"><label>Weight (kg)</label><input type="text" id="weight" placeholder="e.g., 68"></div>
+                        <div class="form-group"><label>Gender</label><select id="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+                        <div class="form-group"><label>Smoking</label><select id="smoking"><option>No</option><option>Yes</option><option>Occasionally</option></select></div>
+                        <div class="form-group"><label>Tobacco</label><select id="tobacco"><option>No</option><option>Yes</option><option>Occasionally</option></select></div>
+                        <div class="form-group"><label>Alcohol</label><select id="alcohol"><option>No</option><option>Occasionally</option><option>Weekly</option><option>Daily</option></select></div>
+                        <div class="form-group"><label>Diet</label><select id="diet"><option>Balanced</option><option>Somewhat Healthy</option><option>Unhealthy</option></select></div>
+                        <div class="form-group"><label>Exercise</label><select id="exercise"><option>Daily</option><option>Weekly</option><option>Rarely</option><option>Never</option></select></div>
+                        <div class="form-group"><label>Sleep</label><input type="text" id="sleep" placeholder="7-8 hrs"></div>
+                        <div class="form-group"><label>Diabetes</label><select id="diabetes"><option>No</option><option>Yes</option><option>Prediabetic</option></select></div>
+                        <div class="form-group"><label>Heart History</label><select id="heart"><option>No</option><option>Yes</option></select></div>
+                        <div class="form-group full-width"><label>Stress Level</label><select id="stress"><option>Low</option><option>Medium</option><option>High</option></select></div>
+                    </div>
+                    <button class="btn-primary" style="margin-top: 12px;" onclick="calculateRisk()">Analyze My Health Risk</button>
+                </div>
+                <div id="resultArea"></div>
+            `;
+        }
+
+        // ===== CALCULATE RISK =====
+        async function calculateRisk() {
+            const age = document.getElementById('age').value;
+            const height = document.getElementById('height').value;
+            const weight = document.getElementById('weight').value;
+            const smoking = document.getElementById('smoking').value;
+            const tobacco = document.getElementById('tobacco').value;
+            const alcohol = document.getElementById('alcohol').value;
+            const diet = document.getElementById('diet').value;
+            const exercise = document.getElementById('exercise').value;
+            const diabetes = document.getElementById('diabetes').value;
+            const heart = document.getElementById('heart').value;
+            const stress = document.getElementById('stress').value;
+            const sleep = document.getElementById('sleep').value;
+            const gender = document.getElementById('gender').value;
+            const bloodSugar = extractedLabValues.bloodSugar || 0;
+            const hemoglobin = extractedLabValues.hemoglobin || 0;
+
+            if (!age || !height || !weight) { alert("Fill Age, Height, Weight"); return; }
+            if (isNaN(age) || age <= 0 || age > 120) { alert("Valid age 1-120"); return; }
+            if (isNaN(height) || height <= 0 || height > 300) { alert("Valid height 1-300 cm"); return; }
+            if (isNaN(weight) || weight <= 0 || weight > 500) { alert("Valid weight 1-500 kg"); return; }
+
+            const heightM = height / 100;
+            const bmi = (weight / (heightM * heightM)).toFixed(1);
+            showToast("Analyzing your health risk...", 'success');
+
+            try {
+                const response = await fetch('api.php?action=calculate-risk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        age: parseInt(age), bmi: parseFloat(bmi), smoking, tobacco, alcohol, diet, exercise, diabetes, heart, stress, gender,
+                        bloodSugar: bloodSugar, hemoglobin: hemoglobin,
+                        userEmail: currentUserEmail,
+                        userName: currentUserName
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    const localDate = year + '-' + month + '-' + day;
+
+                    const newAssessment = {
+                        date: localDate,
+                        bmi: parseFloat(bmi), riskScore: data.riskScore, riskLevel: data.riskLevel, wellnessScore: data.wellnessScore, age: age
+                    };
+
+                    await saveAssessmentToDB(newAssessment);
+                    await loadAssessmentsFromDB();
+
+                    wellnessScore = data.wellnessScore; riskLevel = data.riskLevel; latestBmi = bmi;
+
+                    let riskClass = data.riskLevel === 'High' ? 'risk-high' : data.riskLevel === 'Medium' ? 'risk-medium' : 'risk-low';
+                    let recHtml = data.recommendations.map(rec => `<li>${rec}</li>`).join('');
+                    let schemesHtml = data.schemes.map(scheme => `<div class="scheme-card" onclick="window.open('${scheme.official_link}', '_blank')" style="cursor:pointer;"><h4 style="font-size:13px;">${scheme.name}</h4><p style="font-size:10px;">${scheme.benefits}</p><small style="font-size:9px;">Eligibility: ${scheme.eligibility}</small></div>`).join('');
+
+                    let emailStatusHtml = '';
+                    if (data.emailSent) {
+                        emailStatusHtml = '<div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 12px;">✅ Report sent to your email: ' + currentUserEmail + '</div>';
+                    } else if (data.emailError) {
+                        emailStatusHtml = '<div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 12px;">⚠️ Email could not be sent. But your report is saved here.</div>';
+                    }
+
+                    let labInterpretationHtml = '';
+                    if (bloodSugar > 0 || hemoglobin > 0) {
+                        let bsStatus = bloodSugar > 125 ? 'High' : (bloodSugar > 100 ? 'Borderline' : 'Normal');
+                        let hbStatus = hemoglobin < 12 ? 'Low' : 'Normal';
+                        let interpretation = '';
+                        if (bloodSugar > 100) interpretation += 'Blood sugar is elevated. ';
+                        if (hemoglobin < 12 && hemoglobin > 0) interpretation += 'Hemoglobin is low. ';
+                        if (interpretation === '') interpretation = 'All lab values are within normal range.';
+
+                        labInterpretationHtml = `
+                            <div style="background: linear-gradient(135deg, #E8F4F8, #D9EAF3); padding: 12px; border-radius: 12px; margin: 12px 0;">
+                                <h4 style="color: #1a3a5c; margin-bottom: 8px;">Extracted Lab Report Values</h4>
+                                <div class="form-super-compact">
+                                    <div><strong>Blood Sugar:</strong> ${bloodSugar} mg/dL (${bsStatus})</div>
+                                    <div><strong>Hemoglobin:</strong> ${hemoglobin} g/dL (${hbStatus})</div>
+                                </div>
+                                <p style="font-size: 11px; margin-top: 8px; background: white; padding: 6px; border-radius: 8px;">Interpretation: ${interpretation}</p>
+                            </div>
+                        `;
+                    }
+
+                    currentPDFContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SwasthyaSathi Health Report</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;padding:15px;max-width:100%;color:#333;line-height:1.3;}h1{color:#1a3a5c;text-align:center;font-size:20px;margin-bottom:5px;}.report-date{text-align:center;color:#666;font-size:10px;margin-bottom:10px;}.user-info{background:#E8F4F8;padding:8px;border-radius:6px;margin-bottom:10px;font-size:11px;}.risk-box{padding:8px;border-radius:6px;margin-bottom:10px;text-align:center;}.risk-High{background:#FCE4E0;border-left:4px solid #E8A598;}.risk-Medium{background:#FFF4E0;border-left:4px solid #F0D08C;}.risk-Low{background:#E0F4E8;border-left:4px solid #A8D8EA;}.section{background:#f5f5f5;padding:8px;border-radius:6px;margin-bottom:8px;}h3{color:#1a3a5c;font-size:12px;margin-bottom:5px;}p{font-size:10px;margin:3px 0;}ul{padding-left:20px;margin:5px 0;}li{font-size:10px;margin:2px 0;}.scheme-item{background:#E8F4F8;padding:6px;border-radius:6px;margin:5px 0;}.footer{text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #ddd;padding-top:5px;}.two-column{display:flex;gap:10px;margin-bottom:8px;}.two-column>div{flex:1;background:#f5f5f5;padding:8px;border-radius:6px;}@media print{body{padding:0;}.no-break{break-inside:avoid;page-break-inside:avoid;}}</style></head><body>
+                    <h1>SwasthyaSathi Health Report</h1><div class="report-date">Generated: ${new Date().toLocaleString()}</div>
+                    <div class="user-info"><strong>${currentUserName}</strong> | ${currentUserEmail}</div>
+                    <div class="risk-box risk-${data.riskLevel} no-break"><strong>Risk Level: ${data.riskLevel}</strong> | Score: ${data.riskScore}/100 | Wellness: ${data.wellnessScore}/100</div>
+                    <div class="two-column no-break"><div><strong>Age:</strong> ${age} yrs<br><strong>BMI:</strong> ${bmi}</div><div><strong>Sleep:</strong> ${sleep || 'N/A'} hrs<br><strong>Stress:</strong> ${stress}</div></div>
+                    ${(bloodSugar > 0 || hemoglobin > 0) ? `<div class="section no-break"><strong>📊 Lab Values:</strong> ${bloodSugar > 0 ? `Blood Sugar: ${bloodSugar} mg/dL` : ''} ${hemoglobin > 0 ? `| Hemoglobin: ${hemoglobin} g/dL` : ''}</div>` : ''}
+                    <div class="section no-break"><strong>📋 Recommendations:</strong><ul>${data.recommendations.slice(0, 4).map(rec => `<li>${rec.length > 60 ? rec.substring(0, 60) + '...' : rec}</li>`).join('')}</ul>${data.recommendations.length > 4 ? '<p style="font-size:9px;">+ ' + (data.recommendations.length - 4) + ' more recommendations in portal</p>' : ''}</div>
+                    <div class="section no-break"><strong>🏛️ Government Schemes:</strong>${data.schemes.slice(0, 2).map(scheme => `<div class="scheme-item"><strong>${scheme.name}</strong><br>${scheme.benefits.substring(0, 80)}${scheme.benefits.length > 80 ? '...' : ''}</div>`).join('')}${data.schemes.length > 2 ? '<p style="font-size:9px;">+ ' + (data.schemes.length - 2) + ' more schemes in portal</p>' : ''}</div>
+                    <div class="footer">SwasthyaSathi — AI-Powered Preventive Healthcare Platform | http://swasthya.kesug.com</div>
+                </body></html>`;
+
+                    document.getElementById('resultArea').innerHTML = `
+                        <div class="card">
+                            <h3 class="card-title">Your Health Report</h3>
+                            ${emailStatusHtml}
+                            <div class="${riskClass}"><h3 style="font-size: 14px;">Risk Level: ${data.riskLevel}</h3><p style="font-size: 11px;">Risk Score: ${data.riskScore}/100 | Wellness Score: ${data.wellnessScore}/100</p></div>
+                            ${labInterpretationHtml}
+                            <h4 style="font-size: 13px; margin: 8px 0 5px 0;">Body Metrics</h4>
+                            <p style="font-size: 11px;"><strong>Age:</strong> ${age} | <strong>Height:</strong> ${height} cm | <strong>Weight:</strong> ${weight} kg | <strong>BMI:</strong> ${bmi}</p>
+                            <p style="font-size: 11px;"><strong>Sleep:</strong> ${sleep || 'Not specified'} hrs | <strong>Stress:</strong> ${stress}</p>
+                            <h4 style="font-size: 13px; margin: 8px 0 5px 0;">Recommendations</h4>
+                            <ul class="recommendation-list">${recHtml}</ul>
+                            <h4 style="font-size: 13px; margin: 8px 0 5px 0;">Government Schemes</h4>
+                            ${schemesHtml}
+                            <div class="flex-buttons">
+                                <button class="btn-secondary" onclick="renderHealthCheck()">New Assessment</button>
+                                <button class="btn-primary" onclick="navigateTo('wellness')">Wellness Score</button>
+                                <button class="btn-primary" onclick="navigateTo('graph')">Health Graph</button>
+                                <button class="btn-primary btn-pdf" onclick="exportPDF()">Download PDF Report</button>
+                            </div>
+                        </div>
+                    `;
+                    extractedLabValues = { bloodSugar: 0, hemoglobin: 0 };
+                }
+            } catch(err) { alert("Error: " + err.message); }
+        }
+
+        function exportPDF() {
+            if (!currentPDFContent) { alert("Complete a health assessment first."); return; }
+            const pdfWindow = window.open();
+            pdfWindow.document.write(currentPDFContent);
+            pdfWindow.document.close();
+            pdfWindow.print();
+        }
+
+        // ===== RENDER: WELLNESS SCORE =====
+        function renderWellnessScore() {
+            let scoreHtml = wellnessScore !== null ? `
+                <div class="score-circle"><div class="score-number">${wellnessScore}</div><div>/100</div></div>
+                <div style="text-align:center;"><p style="font-size: 13px; font-weight: 700;">${wellnessScore >= 70 ? 'Excellent. Keep it up.' : wellnessScore >= 40 ? 'Good progress. Keep improving.' : 'Needs attention. Consult a doctor.'}</p></div>
+            ` : '<p style="text-align:center; padding: 20px;">Complete a health assessment first</p>';
+            document.getElementById('mainContent').innerHTML = `
+                <div class="card"><h3 class="card-title">Your Wellness Score</h3>${scoreHtml}</div>
+                <div class="card"><h3 class="card-title">Score Breakdown</h3><div class="stats-grid"><div class="stat-card"><div class="stat-number">${riskLevel !== null ? riskLevel : '--'}</div><div class="stat-label">Risk Level</div></div><div class="stat-card"><div class="stat-number">${latestBmi !== null ? latestBmi : '--'}</div><div class="stat-label">Latest BMI</div></div></div><button class="btn-primary" onclick="navigateTo('healthcheck')">Take New Assessment</button></div>
+            `;
+        }
+
+        // ===== RENDER: GRAPH =====
+        function renderGraph() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="card"><h3 class="card-title">Health Trends Graph</h3><div style="margin-bottom: 8px; font-size: 11px;"><span><span class="legend-bmi"></span> BMI (Left Axis)</span>&nbsp;&nbsp;&nbsp;<span><span class="legend-risk"></span> Risk Score (Right Axis)</span></div><div class="graph-container"><canvas id="trendChart"></canvas></div><div class="graph-interpretation" id="graphInterpretation"></div></div>
+                <div class="card"><h3 class="card-title">Assessment History</h3><div id="historyList"></div></div>
+            `;
+            if (healthHistory.length > 0) {
+                const labels = healthHistory.map(h => h.date);
+                const bmiData = healthHistory.map(h => h.bmi);
+                const riskData = healthHistory.map(h => h.riskScore);
+                if (chartInstance) chartInstance.destroy();
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'BMI', data: bmiData, borderColor: '#2C7DA0', fill: true, tension: 0.3, yAxisID: 'y' }, { label: 'Risk Score', data: riskData, borderColor: '#DC143C', fill: true, tension: 0.3, yAxisID: 'y1' }] },
+                    options: { responsive: true, scales: { y: { title: { display: true, text: 'BMI' }, min: 10, max: 40 }, y1: { position: 'right', title: { display: true, text: 'Risk Score' }, grid: { drawOnChartArea: false }, min: 0, max: 100 } } }
+                });
+                const latestRisk = riskData[riskData.length - 1];
+                document.getElementById('graphInterpretation').innerHTML = `<div class="interpretation-title">Dual Trend Analysis</div><p><strong>Recommendation:</strong> ${latestRisk <= 20 ? 'Low risk. Maintain healthy habits.' : latestRisk <= 50 ? 'Moderate risk. Follow recommendations.' : 'High risk. Consult a doctor.'}</p>`;
+                let historyHtml = '';
+                for (let i = 0; i < healthHistory.length; i++) {
+                    const h = healthHistory[i];
+                    historyHtml += `<div class="profile-row"><div class="profile-label">${h.date}</div><div>BMI: ${h.bmi} | Risk: ${h.riskScore} | Level: ${h.riskLevel}</div><button class="delete-btn" onclick="deleteAssessment(${i})">Delete</button></div>`;
+                }
+                document.getElementById('historyList').innerHTML = historyHtml;
+            } else {
+                document.getElementById('historyList').innerHTML = '<p style="text-align:center; padding:20px;">No assessments yet.</p>';
+                document.getElementById('graphInterpretation').innerHTML = '<p style="text-align:center;">Complete an assessment to see trends.</p>';
+            }
+        }
+
+        // ===== LOGOUT =====
+        function logout() {
+            currentUserId = null; currentUserName = null; currentUserEmail = null; currentRegisteredDate = null;
+            healthHistory = []; wellnessScore = null; riskLevel = null; latestBmi = null;
+            extractedLabValues = { bloodSugar: 0, hemoglobin: 0 };
+            document.getElementById('dashboardScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('userNameInput').value = '';
+            document.getElementById('userEmailInput').value = '';
+            showToast('Logged out successfully');
+        }
+
+        // ===== INIT =====
+        setupNavigation();
+    </script>
+</body>
+</html>
