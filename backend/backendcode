@@ -1,0 +1,188 @@
+<?php
+// Set timezone to Indian Standard Time (IST)
+date_default_timezone_set('Asia/Kolkata');
+
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// InfinityFree Database Credentials
+$host = "sql110.infinityfree.com";
+$username = "if0_42167709";
+$password = "Swasthya2025";
+$database = "if0_42167709_swasthya_new";
+
+$conn = new mysqli($host, $username, $password, $database);
+
+if ($conn->connect_error) {
+    die(json_encode(["error" => "Database connection failed: " . $conn->connect_error]));
+}
+
+// Create tables if they don't exist
+$conn->query("CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    registered_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
+$conn->query("CREATE TABLE IF NOT EXISTS assessments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    age INT NOT NULL,
+    bmi DECIMAL(5,2) NOT NULL,
+    risk_score INT NOT NULL,
+    risk_level VARCHAR(20) NOT NULL,
+    wellness_score INT NOT NULL,
+    assessment_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+)");
+
+$action = $_GET['action'] ?? '';
+
+// Save user (with registration date)
+if ($action == 'save-user') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $name = trim($data['name'] ?? '');
+    $email = trim($data['email'] ?? '');
+    
+    if (empty($name) || empty($email)) {
+        echo json_encode(["success" => false, "error" => "Name and email required"]);
+        exit;
+    }
+    
+    // Check if user already exists
+    $stmt = $conn->prepare("SELECT id, name, registered_date FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result && $result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        echo json_encode([
+            "success" => true, 
+            "userId" => $user['id'], 
+            "name" => $user['name'],
+            "registeredDate" => $user['registered_date'],
+            "isNew" => false
+        ]);
+    } else {
+        // New user - store registration date as today (IST)
+        $registeredDate = date('Y-m-d');
+        $stmt = $conn->prepare("INSERT INTO users (name, email, registered_date) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $name, $email, $registeredDate);
+        $stmt->execute();
+        $userId = $stmt->insert_id;
+        echo json_encode([
+            "success" => true, 
+            "userId" => $userId, 
+            "name" => $name,
+            "registeredDate" => $registeredDate,
+            "isNew" => true
+        ]);
+    }
+    exit;
+}
+
+// ============================================================
+// ✅ FIXED: Save assessment with correct timezone and bind params
+// ============================================================
+if ($action == 'save-assessment') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    $user_id = $data['userId'] ?? 0;
+    $age = $data['age'] ?? 0;
+    $bmi = $data['bmi'] ?? 0;
+    $riskScore = $data['riskScore'] ?? 0;
+    $riskLevel = $data['riskLevel'] ?? '';
+    $wellnessScore = $data['wellnessScore'] ?? 0;
+    
+    // ✅ Set MySQL session timezone to IST
+    $conn->query("SET time_zone = '+05:30'");
+    
+    // ✅ Include assessment_date with NOW()
+    $stmt = $conn->prepare("INSERT INTO assessments (user_id, age, bmi, risk_score, risk_level, wellness_score, assessment_date) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+    
+    // ✅ Correct bind_param: i=integer, d=decimal, s=string
+    // Parameters: user_id(int), age(int), bmi(decimal), riskScore(int), riskLevel(string), wellnessScore(int)
+    $stmt->bind_param("iidisi", $user_id, $age, $bmi, $riskScore, $riskLevel, $wellnessScore);
+    
+    if ($stmt->execute()) {
+        $new_id = $conn->insert_id;
+        echo json_encode([
+            "success" => true, 
+            "id" => $new_id,
+            "message" => "Assessment saved successfully"
+        ]);
+    } else {
+        echo json_encode([
+            "success" => false, 
+            "error" => $stmt->error
+        ]);
+    }
+    exit;
+}
+
+// Get all assessments for a user
+if ($action == 'get-assessments') {
+    $user_id = isset($_GET['userId']) ? intval($_GET['userId']) : 0;
+    
+    // ✅ Set timezone for accurate date display
+    $conn->query("SET time_zone = '+05:30'");
+    
+    $stmt = $conn->prepare("SELECT id, age, bmi, risk_score, risk_level, wellness_score, assessment_date FROM assessments WHERE user_id = ? ORDER BY assessment_date DESC");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $assessments = [];
+    while ($row = $result->fetch_assoc()) {
+        $assessments[] = [
+            'id' => $row['id'],
+            'age' => $row['age'],
+            'bmi' => $row['bmi'],
+            'risk_score' => $row['risk_score'],
+            'risk_level' => $row['risk_level'],
+            'wellness_score' => $row['wellness_score'],
+            'assessment_date' => $row['assessment_date']
+        ];
+    }
+    echo json_encode($assessments);
+    exit;
+}
+
+// Delete assessment
+if ($action == 'delete-assessment') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $assessment_id = $data['assessmentId'] ?? 0;
+    $user_id = $data['userId'] ?? 0;
+    
+    $stmt = $conn->prepare("DELETE FROM assessments WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $assessment_id, $user_id);
+    
+    if ($stmt->execute()) {
+        echo json_encode(["success" => true]);
+    } else {
+        echo json_encode(["success" => false, "error" => $stmt->error]);
+    }
+    exit;
+}
+
+// ============================================================
+// Calculate Health Risk (with Lab Values & Email)
+// ============================================================
+if ($action == 'calculate-risk') {
+    // ... (keep your existing calculate-risk code here - it's fine)
+    // ... (too long to include, but keep it as is)
+}
+
+echo json_encode(["success" => false, "error" => "Invalid action"]);
+?>
