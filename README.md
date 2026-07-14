@@ -58,3 +58,16 @@ Week 2:
 - Frontend Development
 - Backend Setup
 - Database Design
+
+Week 3:
+- deployment
+- documentation
+
+Week 4:
+- completed with deployment and hosting the website
+- completed the research paper
+- published the research paper at ieee branch
+  
+##Project Status: Completed:
+
+The SwasthyaSathi project has been successfully completed. The web platform has been designed, developed, tested, and deployed. All planned modules were implemented successfully. The IEEE-format research paper has been completed and submitted for publication. Final documentation and presentation have also been completed.
